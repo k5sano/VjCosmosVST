@@ -76,25 +76,23 @@ void SyphonOutput::publishTexture(unsigned int texID, int width, int height)
 void SyphonOutput::stop()
 {
     @autoreleasepool {
-        // Destroy FBO
-        if (impl->fbo) {
-            glDeleteFramebuffers(1, &impl->fbo);
-            impl->fbo = 0;
-        }
-        if (impl->fboTexture) {
-            glDeleteTextures(1, &impl->fboTexture);
-            impl->fboTexture = 0;
-        }
-        if (impl->rbo) {
-            glDeleteRenderbuffers(1, &impl->rbo);
-            impl->rbo = 0;
-        }
-
-        // Stop Syphon server
+        // Stop Syphon server FIRST (before deleting GL resources)
         if (impl->server) {
             [impl->server stop];
             impl->server = nil;
             NSLog(@"[VJCosmos] Syphon server stopped");
+        }
+
+        // Only delete GL resources if we have a valid context
+        if (CGLGetCurrentContext() != nullptr) {
+            if (impl->fbo) { glDeleteFramebuffers(1, &impl->fbo); impl->fbo = 0; }
+            if (impl->fboTexture) { glDeleteTextures(1, &impl->fboTexture); impl->fboTexture = 0; }
+            if (impl->rbo) { glDeleteRenderbuffers(1, &impl->rbo); impl->rbo = 0; }
+        } else {
+            // Leak GL resources rather than crash
+            impl->fbo = 0;
+            impl->fboTexture = 0;
+            impl->rbo = 0;
         }
     }
 }

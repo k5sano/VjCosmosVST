@@ -47,19 +47,45 @@ target_link_libraries(VJCosmosVST
 
 # Syphon framework (macOS only)
 if(APPLE)
+    # Syphon framework の場所を指定
+    set(SYPHON_FRAMEWORK "${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework")
+
     target_include_directories(VJCosmosVST PRIVATE
-        ${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework/Headers
+        ${SYPHON_FRAMEWORK}/Headers
     )
     target_link_libraries(VJCosmosVST PRIVATE
-        "${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework"
+        "${SYPHON_FRAMEWORK}"
     )
-    # Copy Syphon.framework into VST3 plugin bundle at install time
-    set(SYPHON_SRC "${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework")
-    set(VST3_DEST "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/VST3/VJCosmos.vst3/Contents/Frameworks/Syphon.framework")
-    set(STANDALONE_DEST "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/Standalone/VJCosmos.app/Contents/Frameworks/Syphon.framework")
-    add_custom_command(TARGET VJCosmosVST POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_SRC}" "${VST3_DEST}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_SRC}" "${STANDALONE_DEST}"
+
+    # CMake自動rpathを無効化（絶対パスが埋め込まれるのを防ぐ）
+    set_target_properties(VJCosmosVST_VST3 PROPERTIES SKIP_BUILD_RPATH TRUE)
+    set_target_properties(VJCosmosVST_Standalone PROPERTIES SKIP_BUILD_RPATH TRUE)
+
+    # VST3: Syphon.framework をコピー + rpath修正
+    set(VST3_BUNDLE "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/VST3/VJCosmos.vst3")
+    set(INSTALLED_VST3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/VJCosmos.vst3")
+    add_custom_command(TARGET VJCosmosVST_VST3 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${VST3_BUNDLE}/Contents/Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_FRAMEWORK}" "${VST3_BUNDLE}/Contents/Frameworks/Syphon.framework"
+        COMMAND install_name_tool -add_rpath "@loader_path/../Frameworks" "${VST3_BUNDLE}/Contents/MacOS/VJCosmos"
+        COMMENT "Embedding Syphon.framework in VST3 bundle"
+    )
+
+    # Standalone: Syphon.framework をコピー + rpath修正
+    set(STANDALONE_BUNDLE "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/Standalone/VJCosmos.app")
+    add_custom_command(TARGET VJCosmosVST_Standalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${STANDALONE_BUNDLE}/Contents/Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_FRAMEWORK}" "${STANDALONE_BUNDLE}/Contents/Frameworks/Syphon.framework"
+        COMMAND install_name_tool -add_rpath "@loader_path/../Frameworks" "${STANDALONE_BUNDLE}/Contents/MacOS/VJCosmos"
+        COMMENT "Embedding Syphon.framework in Standalone bundle"
+    )
+
+    # COPY_PLUGIN_AFTER_BUILD でインストールされた先にもフレームワークをコピー + rpath修正
+    add_custom_command(TARGET VJCosmosVST_VST3 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${INSTALLED_VST3}/Contents/Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_FRAMEWORK}" "${INSTALLED_VST3}/Contents/Frameworks/Syphon.framework"
+        COMMAND install_name_tool -add_rpath "@loader_path/../Frameworks" "${INSTALLED_VST3}/Contents/MacOS/VJCosmos"
+        COMMENT "Copying Syphon.framework to installed VST3 and fixing rpath"
     )
 endif()
 

@@ -171,7 +171,7 @@ void VJCosmosEditor::renderOpenGL()
     // TODO: Phase 3+ — fluid simulation, effects, 3D drawing here
 
     // Publish FBO texture to Syphon, then blit to screen
-    syphonOutput.publishTexture(syphonOutput.getFBOTextureID(), w, h);
+    syphonOutput.publishTexture(syphonOutput.getFBOTextureID(), fboW, fboH);
     syphonOutput.unbindFBO(w, h);
 }
 
