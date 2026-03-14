@@ -2,6 +2,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_opengl/juce_opengl.h>
 #include "PluginProcessor.h"
+#include "SyphonOutput.h"
 
 class VJCosmosEditor : public juce::AudioProcessorEditor,
                         private juce::OpenGLRenderer,
@@ -25,6 +26,7 @@ private:
 
     VJCosmosProcessor& processorRef;
     juce::OpenGLContext openGLContext;
+    SyphonOutput syphonOutput;
 
     // Phase 2: simple level display
     float displayBass = 0, displayMid = 0, displayHigh = 0;

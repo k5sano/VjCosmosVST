@@ -27,6 +27,7 @@ target_sources(VJCosmosVST PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
     Source/AudioAnalyzer.cpp
+    Source/SyphonOutput.mm
 )
 
 # インクルードディレクトリ
@@ -43,6 +44,24 @@ target_link_libraries(VJCosmosVST
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# Syphon framework (macOS only)
+if(APPLE)
+    target_include_directories(VJCosmosVST PRIVATE
+        ${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework/Headers
+    )
+    target_link_libraries(VJCosmosVST PRIVATE
+        "${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework"
+    )
+    # Copy Syphon.framework into VST3 plugin bundle at install time
+    set(SYPHON_SRC "${CMAKE_SOURCE_DIR}/Frameworks/Syphon.framework")
+    set(VST3_DEST "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/VST3/VJCosmos.vst3/Contents/Frameworks/Syphon.framework")
+    set(STANDALONE_DEST "${CMAKE_BINARY_DIR}/VJCosmosVST_artefacts/Release/Standalone/VJCosmos.app/Contents/Frameworks/Syphon.framework")
+    add_custom_command(TARGET VJCosmosVST POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_SRC}" "${VST3_DEST}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${SYPHON_SRC}" "${STANDALONE_DEST}"
+    )
+endif()
 
 # コンパイル定義
 target_compile_definitions(VJCosmosVST

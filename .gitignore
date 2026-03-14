@@ -12,3 +12,4 @@ cmake-build-*/
 *.xcodeproj
 *.xcworkspace
 DerivedData/
+Frameworks/

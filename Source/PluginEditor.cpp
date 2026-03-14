@@ -140,6 +140,7 @@ void VJCosmosEditor::layoutSectionLabel(juce::Label& lbl, int x, int y, int w)
 
 void VJCosmosEditor::newOpenGLContextCreated()
 {
+    syphonOutput.start(openGLContext.getRawContext());
 }
 
 void VJCosmosEditor::renderOpenGL()
@@ -151,18 +152,32 @@ void VJCosmosEditor::renderOpenGL()
     const int w = static_cast<int>(getWidth() * desktopScale);
     const int h = static_cast<int>(getHeight() * desktopScale);
 
-    glViewport(0, 0, w, h);
+    // Syphon FBO: cap at 1280x1280 for Touch Designer
+    const int maxSyphon = 1280;
+    const int fboW = std::min(w, maxSyphon);
+    const int fboH = std::min(h, maxSyphon);
 
     float b = displayBass;
     float m = displayMid;
     float hi = displayHigh;
 
+    // Render into FBO (for Syphon output)
+    syphonOutput.ensureFBO(fboW, fboH);
+    syphonOutput.bindFBO();
+
     glClearColor(0.08f + b * 0.15f, 0.06f + m * 0.1f, 0.13f + hi * 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    // TODO: Phase 3+ — fluid simulation, effects, 3D drawing here
+
+    // Publish FBO texture to Syphon, then blit to screen
+    syphonOutput.publishTexture(syphonOutput.getFBOTextureID(), w, h);
+    syphonOutput.unbindFBO(w, h);
 }
 
 void VJCosmosEditor::openGLContextClosing()
 {
+    syphonOutput.stop();
 }
 
 void VJCosmosEditor::timerCallback()
