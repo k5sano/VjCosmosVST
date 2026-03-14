@@ -1,0 +1,14 @@
+build/
+Builds/
+.DS_Store
+*.o
+*.d
+*.vst3
+*.component
+*.app
+CMakeFiles/
+cmake-build-*/
+.idea/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
